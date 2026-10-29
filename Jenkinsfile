@@ -15,40 +15,23 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh '''
-                    python3 -m venv .venv
-                    .venv/bin/pip install -r requirements.txt
+                bat '''
+                    py -3 -m venv .venv
+                    .venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    .venv\\Scripts\\python.exe -m pip install -r requirements.txt
                 '''
             }
         }
 
         stage('Test') {
             steps {
-                sh '.venv/bin/python -m unittest -v'
+                bat '.venv\\Scripts\\python.exe -m unittest -v'
             }
         }
 
-        stage('Deploy') {
+        stage('Package') {
             steps {
-                sh '''
-                    mkdir -p runtime
-                    cp app.py runtime/app.py
-
-                    cat > runtime/ecosystem.config.js <<EOF
-module.exports = {
-    apps: [{
-        name: "flask-backend",
-        script: "app.py",
-        interpreter: "${WORKSPACE}/.venv/bin/python",
-        cwd: "${WORKSPACE}/runtime"
-    }]
-};
-EOF
-
-                    pm2 startOrReload runtime/ecosystem.config.js --update-env
-                    sleep 2
-                    curl --fail http://127.0.0.1:5000/health
-                '''
+                echo 'Flask tests passed. Application is ready for deployment.'
             }
         }
     }
